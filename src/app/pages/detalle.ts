@@ -4,7 +4,7 @@ import { CabeceraComponent } from '../core/cabecera';
 import { compartirDecimo } from '../core/compartir';
 import { IconComponent } from '../core/icon';
 import { Decimo, ESTADOS, Estado, PRECIO_DECIMO_CENT, Reparto } from '../core/models';
-import { formatoEuros, formatoNumero, pendienteDeAsignar, repartoEquitativo } from '../core/reparto';
+import { formatoEuros, formatoNumero, partePersona, pendienteDeAsignar, repartoEquitativo } from '../core/reparto';
 import { Store } from '../core/store';
 import { Ui } from '../core/ui';
 
@@ -200,7 +200,12 @@ export class DetallePage {
 
   protected async compartir() {
     if (!this.original) return;
-    const reparto = this.original.reparto.map((r) => ({ nombre: this.store.nombreDestino(r.destino), importe: formatoEuros(r.importeCent) }));
+    // Cada persona con lo que juega en este décimo (directo + su parte de los grupos), no el nombre del grupo.
+    const d = this.original, grupos = this.store.grupos();
+    const reparto = this.store.personas()
+      .map((p) => ({ nombre: p.nombre, cent: partePersona(d, p.id, grupos) }))
+      .filter((p) => p.cent > 0)
+      .map((p) => ({ nombre: p.nombre, importe: formatoEuros(p.cent) }));
     const ok = await compartirDecimo({ year: this.anio(), numero: this.numero(), reparto });
     if (!ok) this.ui.aviso('Tu navegador no permite compartir; se ha descargado la imagen.');
   }

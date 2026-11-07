@@ -96,6 +96,7 @@ export class ResumenPage {
     await this.enviar({
       titulo: `Lotería de Navidad ${this.store.year()}`,
       columnas: m.columnas.map((d) => d.numero),
+      lugares: m.columnas.map((d) => d.lugar),
       filas: m.filas.map((f) => ({ nombre: f.nombre, celdas: f.celdas.map((v) => (v ? formatoEuros(v) : '')), total: formatoEuros(f.total) })),
     });
   }
@@ -108,7 +109,7 @@ export class ResumenPage {
       return { nombre: p.nombre, celdas: v.map((x) => (x ? formatoEuros(x) : '')), total: formatoEuros(v.reduce((a, x) => a + x, 0)) };
     });
     await this.enviar({
-      titulo: `Lotería de Navidad ${this.store.year()}`, columnas: cols.map((d) => d.numero), filas,
+      titulo: `Lotería de Navidad ${this.store.year()}`, columnas: cols.map((d) => d.numero), lugares: cols.map((d) => d.lugar), filas,
     });
   }
 

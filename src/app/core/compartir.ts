@@ -112,13 +112,43 @@ export async function compartirDecimo(t: TarjetaDecimo): Promise<boolean> {
 export interface TablaMatriz {
   titulo: string;
   columnas: string[]; // números de décimo
+  /** «Comprado en» de cada columna (mismo orden); si ninguno tiene valor, no se dibuja la fila. */
+  lugares?: string[];
   filas: { nombre: string; celdas: string[]; total: string }[]; // total = lo que paga cada persona
+}
+
+/** Parte `texto` en hasta `max` líneas que caben en `ancho`; la última lleva «…» si no cabe todo. */
+function envolver(g: CanvasRenderingContext2D, texto: string, ancho: number, max: number): string[] {
+  const lineas: string[] = [];
+  let actual = '';
+  const palabras = texto.split(/\s+/).filter(Boolean);
+  for (let i = 0; i < palabras.length; i++) {
+    const prueba = actual ? `${actual} ${palabras[i]}` : palabras[i];
+    if (g.measureText(prueba).width <= ancho || !actual) { actual = prueba; continue; }
+    lineas.push(actual); actual = palabras[i];
+    if (lineas.length === max - 1) { actual = palabras.slice(i).join(' '); break; }
+  }
+  if (actual) lineas.push(actual);
+  const ultima = lineas.length - 1;
+  while (ultima >= 0 && g.measureText(lineas[ultima]).width > ancho && lineas[ultima].length > 1)
+    lineas[ultima] = lineas[ultima].slice(0, -2).trimEnd() + '…';
+  return lineas;
 }
 
 /** Tabla: personas en filas, números de décimo en columnas, cantidad en cada celda. */
 export async function compartirMatriz(m: TablaMatriz): Promise<boolean> {
-  const colW = 150, nomW = 230, totW = 150, fh = 56;
-  const W = nomW + m.columnas.length * colW + totW + 40, H = 150 + m.filas.length * fh;
+  await document.fonts.load(`500 18px ${FUENTE}`);
+  const colW = 150, nomW = 230, totW = 150, fh = 56, anchoLugar = colW - 16, altoLinea = 22;
+
+  // «Comprado en»: fila extra bajo los números, solo si algún décimo tiene lugar.
+  const lugares = m.lugares ?? [];
+  const hayLugares = lugares.some((l) => l.trim() !== '');
+  const medida = lienzo(1, 1).g;
+  medida.font = `500 18px ${FUENTE}`;
+  const lineasLugar = hayLugares ? m.columnas.map((_, i) => envolver(medida, (lugares[i] ?? '').trim(), anchoLugar, 2)) : [];
+  const extra = hayLugares ? Math.max(1, ...lineasLugar.map((l) => l.length)) * altoLinea + 12 : 0;
+
+  const W = nomW + m.columnas.length * colW + totW + 40, H = 150 + extra + m.filas.length * fh;
   const { c, g } = lienzo(Math.max(W, 560), H);
   g.fillStyle = '#1F5C45'; g.fillRect(0, 0, c.width, H);
   g.fillStyle = '#FFFFFF'; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
@@ -127,16 +157,25 @@ export async function compartirMatriz(m: TablaMatriz): Promise<boolean> {
   const xTotal = 20 + nomW + m.columnas.length * colW + totW;
   g.font = `600 24px ${MONO}`; g.textAlign = 'right'; g.globalAlpha = 0.85;
   m.columnas.forEach((n, i) => g.fillText(`${n.slice(0, 2)}.${n.slice(2)}`, x(i) - 12, 124));
-  g.fillText('TOTAL', xTotal - 12, 124); g.globalAlpha = 1;
+  g.fillText('TOTAL', xTotal - 12, 124);
+
+  if (hayLugares) {
+    g.font = `500 18px ${FUENTE}`; g.globalAlpha = 0.75;
+    g.textAlign = 'left'; g.fillText('Comprado en', 20, 156);
+    g.textAlign = 'right';
+    lineasLugar.forEach((ls, i) => ls.forEach((l, j) => g.fillText(l, x(i) - 12, 156 + j * altoLinea)));
+  }
+  g.globalAlpha = 1;
+
   const linea = (y: number) => { g.fillStyle = 'rgba(255,255,255,.3)'; g.fillRect(20, y, c.width - 40, 2); g.fillStyle = '#FFFFFF'; };
-  linea(138);
-  const fila = (y: number, nombre: string, celdas: string[], total: string, negrita: boolean) => {
-    g.font = `${negrita ? 700 : 500} 28px ${FUENTE}`;
+  linea(138 + extra);
+  const fila = (y: number, nombre: string, celdas: string[], total: string) => {
+    g.font = `500 28px ${FUENTE}`;
     g.textAlign = 'left'; g.fillText(nombre, 20, y);
     g.textAlign = 'right';
     celdas.forEach((v, i) => { g.globalAlpha = v === '' ? 0.3 : 1; g.fillText(v === '' ? '—' : v, x(i) - 12, y); });
     g.globalAlpha = 1; g.font = `700 28px ${FUENTE}`; g.fillText(total, xTotal - 12, y);
   };
-  m.filas.forEach((f, i) => fila(182 + i * fh, f.nombre, f.celdas, f.total, false));
+  m.filas.forEach((f, i) => fila(182 + extra + i * fh, f.nombre, f.celdas, f.total));
   return compartirBlob(await aBlob(c), 'resumen-loteria.png', m.titulo);
 }
