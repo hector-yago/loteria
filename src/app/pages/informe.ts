@@ -10,9 +10,10 @@ import { Store } from '../core/store';
   template: `
     <app-cabecera titulo="Informe" [anio]="false" />
     <div class="pad">
+      @if (!store.yoIds().length) { <div class="hint">Marca en Personas cuál eres tú. Mientras tanto se cuenta cada décimo entero.</div> }
       <div class="stats">
-        <div class="card stat"><b>{{ eur(jugado()) }}</b><span>jugado en total</span></div>
-        <div class="card stat"><b style="color:var(--ok)">{{ eur(premio()) }}</b><span>premios</span></div>
+        <div class="card stat"><b>{{ eur(jugado()) }}</b><span>jugado por mí en total</span></div>
+        <div class="card stat"><b style="color:var(--ok)">{{ eur(premio()) }}</b><span>premios que me tocan</span></div>
         <div class="card stat"><b [style.color]="balance() >= 0 ? 'var(--ok)' : 'var(--accent)'">{{ eur(balance()) }}</b><span>balance</span></div>
         <div class="card stat"><b>{{ anios().length }}</b><span>sorteos con décimos</span></div>
       </div>
@@ -40,7 +41,7 @@ import { Store } from '../core/store';
   `,
 })
 export class InformePage {
-  private readonly store = inject(Store);
+  protected readonly store = inject(Store);
   protected readonly eur = formatoEuros;
   protected readonly W = 330; protected readonly H = 170; protected readonly X0 = 34;
 
@@ -48,8 +49,8 @@ export class InformePage {
     const m = new Map<number, { year: number; jugado: number; premio: number }>();
     for (const d of this.store.decimos()) {
       const a = m.get(d.year) ?? { year: d.year, jugado: 0, premio: 0 };
-      if (d.estado !== 'pendiente') a.jugado += d.importeCent;
-      a.premio += d.premioCent;
+      if (d.estado !== 'pendiente') a.jugado += this.store.miParte(d);
+      a.premio += this.store.miPremio(d);
       m.set(d.year, a);
     }
     return [...m.values()].sort((a, b) => a.year - b.year);

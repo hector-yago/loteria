@@ -27,7 +27,6 @@ export interface Decimo {
   favorito: boolean;
   premioCent: number;
   premioTexto?: string;
-  foto?: Blob;
   reparto: Reparto[];
   notas?: string;
 }
@@ -36,6 +35,8 @@ export interface Persona {
   id: string;
   nombre: string;
   color: string;
+  /** Esta persona soy yo (puede haber varias): el informe cuenta solo lo que juegan ellas. */
+  soyYo?: boolean;
 }
 
 export interface Grupo {

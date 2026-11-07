@@ -9,32 +9,16 @@ export interface BackupFile {
   sorteos: Sorteo[];
   personas: Persona[];
   grupos: Grupo[];
-  decimos: (Omit<Decimo, 'foto'> & { foto?: string })[]; // foto en data URL
-}
-
-function blobToDataUrl(b: Blob): Promise<string> {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result as string);
-    r.onerror = () => rej(r.error);
-    r.readAsDataURL(b);
-  });
-}
-
-async function dataUrlToBlob(u: string): Promise<Blob> {
-  return (await fetch(u)).blob();
+  decimos: Decimo[];
 }
 
 export async function crearBackup(
   d: { sorteos: Sorteo[]; personas: Persona[]; grupos: Grupo[]; decimos: Decimo[] },
   ahora = new Date(),
 ): Promise<BackupFile> {
-  const decimos = await Promise.all(
-    d.decimos.map(async ({ foto, ...resto }) => (foto ? { ...resto, foto: await blobToDataUrl(foto) } : resto)),
-  );
   return {
     app: 'mis-decimos', version: BACKUP_VERSION, exportadoEn: ahora.toISOString(),
-    sorteos: d.sorteos, personas: d.personas, grupos: d.grupos, decimos,
+    sorteos: d.sorteos, personas: d.personas, grupos: d.grupos, decimos: d.decimos,
   };
 }
 
@@ -57,8 +41,7 @@ export async function leerBackup(texto: string): Promise<{ sorteos: Sorteo[]; pe
   let json: unknown;
   try { json = JSON.parse(texto); } catch { throw new Error('El archivo no es un JSON válido.'); }
   const b = validarBackup(json);
-  const decimos = await Promise.all(
-    b.decimos.map(async ({ foto, ...resto }) => (foto ? { ...resto, foto: await dataUrlToBlob(foto) } : resto) as Decimo),
-  );
+  // Las copias antiguas pueden traer el campo «foto» (función retirada): se descarta.
+  const decimos = b.decimos.map(({ foto: _foto, ...resto }: Decimo & { foto?: unknown }) => resto as Decimo);
   return { sorteos: b.sorteos, personas: b.personas, grupos: b.grupos, decimos };
 }

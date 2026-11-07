@@ -41,7 +41,8 @@ export class InicioPage {
   protected readonly eur = formatoEuros;
   protected readonly num = formatoNumero;
   protected readonly favoritos = computed(() => this.store.decimosAnio().filter((d) => d.favorito));
-  protected readonly pendientes = computed(() => this.store.decimosAnio().filter((d) => d.estado === 'pendiente'));
+  // Los favoritos pendientes ya salen en «Favoritos»: no se repiten en «Por comprar».
+  protected readonly pendientes = computed(() => this.store.decimosAnio().filter((d) => d.estado === 'pendiente' && !d.favorito));
   protected readonly fecha = computed(() => {
     const s = this.store.sorteos().find((x) => x.year === this.store.year());
     return s ? new Date(s.fecha + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '';

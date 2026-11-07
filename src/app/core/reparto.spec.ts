@@ -62,3 +62,15 @@ describe('favoritos y partes', () => {
     expect(partePersonaEnGrupo(d, 'c', grupos[0])).toBe(500);
   });
 });
+
+import { miParteCent, miPremioCent } from './reparto';
+
+describe('lo que juego yo', () => {
+  const d = dec({ premioCent: 10000, reparto: [{ destino: 'g:g1', importeCent: 1000 }, { destino: 'p:b', importeCent: 500 }] });
+  it('sin «yo» marcado cuenta el décimo entero', () => expect(miParteCent(d, [], grupos)).toBe(2000));
+  it('suma mi parte del grupo y lo sin asignar', () => expect(miParteCent(d, ['a'], grupos)).toBe(500 + 500));
+  it('puedo ser varias personas', () => expect(miParteCent(d, ['a', 'c'], grupos)).toBe(1000 + 500));
+  it('no juego nada si todo está asignado a otros', () =>
+    expect(miParteCent(dec({ reparto: [{ destino: 'p:b', importeCent: 2000 }] }), ['a'], grupos)).toBe(0));
+  it('premio proporcional a mi parte', () => expect(miPremioCent(d, ['a'], grupos)).toBe(5000));
+});

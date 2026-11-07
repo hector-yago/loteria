@@ -2,7 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { crearBackup, leerBackup } from './backup';
 import { db } from './db';
 import { Decimo, Estado, Grupo, Persona, Sorteo } from './models';
-import { favoritosParaAnio } from './reparto';
+import { favoritosParaAnio, miParteCent, miPremioCent } from './reparto';
 
 const nuevoId = () => crypto.randomUUID();
 const COLORES = ['#B3202A', '#1F5C45', '#8A5A00', '#1F5E86', '#6B3FA0', '#B34A1F'];
@@ -18,16 +18,20 @@ export class Store {
   readonly listo = signal(false);
 
   readonly decimosAnio = computed(() => this.decimos().filter((d) => d.year === this.year()));
-  readonly totalJugadoCent = computed(() => this.suma(this.decimosAnio().filter((d) => d.estado !== 'pendiente'), 'importeCent'));
-  readonly totalPremioCent = computed(() => this.suma(this.decimosAnio(), 'premioCent'));
-  readonly porComprarCent = computed(() => this.suma(this.decimosAnio().filter((d) => d.estado === 'pendiente'), 'importeCent'));
+  /** Ids de las personas marcadas como «yo». */
+  readonly yoIds = computed(() => this.personas().filter((p) => p.soyYo).map((p) => p.id));
+  /** Lo que juego yo (no lo comprado en total) en el año seleccionado. */
+  readonly totalJugadoCent = computed(() => this.decimosAnio().filter((d) => d.estado !== 'pendiente').reduce((a, d) => a + this.miParte(d), 0));
+  readonly totalPremioCent = computed(() => this.decimosAnio().reduce((a, d) => a + this.miPremio(d), 0));
+  readonly porComprarCent = computed(() => this.decimosAnio().filter((d) => d.estado === 'pendiente').reduce((a, d) => a + this.miParte(d), 0));
 
   constructor() {
     this.aplicarTema();
     void this.cargar();
   }
 
-  private suma(l: Decimo[], k: 'importeCent' | 'premioCent') { return l.reduce((a, d) => a + d[k], 0); }
+  miParte(d: Decimo) { return miParteCent(d, this.yoIds(), this.grupos()); }
+  miPremio(d: Decimo) { return miPremioCent(d, this.yoIds(), this.grupos()); }
 
   async cargar() {
     const [d, p, g, s] = await Promise.all([db.decimos.toArray(), db.personas.toArray(), db.grupos.toArray(), db.sorteos.toArray()]);
@@ -74,9 +78,9 @@ export class Store {
   async cambiarEstado(id: string, estado: Estado) { const d = this.decimos().find((x) => x.id === id); if (d) await this.guardarDecimo({ ...d, estado }); }
 
   // ---- personas y grupos ----
-  async guardarPersona(nombre: string, id?: string) {
+  async guardarPersona(nombre: string, soyYo: boolean, id?: string) {
     const prev = this.personas().find((p) => p.id === id);
-    const p: Persona = { id: id ?? nuevoId(), nombre: nombre.trim(), color: prev?.color ?? COLORES[this.personas().length % COLORES.length] };
+    const p: Persona = { id: id ?? nuevoId(), nombre: nombre.trim(), color: prev?.color ?? COLORES[this.personas().length % COLORES.length], soyYo };
     await db.personas.put(p); this.personas.update((l) => [...l.filter((x) => x.id !== p.id), p]);
   }
   async eliminarPersona(id: string) {

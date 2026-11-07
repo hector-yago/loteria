@@ -112,15 +112,13 @@ export async function compartirDecimo(t: TarjetaDecimo): Promise<boolean> {
 export interface TablaMatriz {
   titulo: string;
   columnas: string[]; // números de décimo
-  filas: { nombre: string; celdas: string[]; total: string }[];
-  totalesColumna: string[];
-  totalGeneral: string;
+  filas: { nombre: string; celdas: string[]; total: string }[]; // total = lo que paga cada persona
 }
 
 /** Tabla: personas en filas, números de décimo en columnas, cantidad en cada celda. */
 export async function compartirMatriz(m: TablaMatriz): Promise<boolean> {
   const colW = 150, nomW = 230, totW = 150, fh = 56;
-  const W = nomW + m.columnas.length * colW + totW + 40, H = 150 + (m.filas.length + 2) * fh;
+  const W = nomW + m.columnas.length * colW + totW + 40, H = 150 + m.filas.length * fh;
   const { c, g } = lienzo(Math.max(W, 560), H);
   g.fillStyle = '#1F5C45'; g.fillRect(0, 0, c.width, H);
   g.fillStyle = '#FFFFFF'; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
@@ -140,8 +138,5 @@ export async function compartirMatriz(m: TablaMatriz): Promise<boolean> {
     g.globalAlpha = 1; g.font = `700 28px ${FUENTE}`; g.fillText(total, xTotal - 12, y);
   };
   m.filas.forEach((f, i) => fila(182 + i * fh, f.nombre, f.celdas, f.total, false));
-  const yT = 182 + m.filas.length * fh;
-  linea(yT - 34);
-  fila(yT + 6, 'Total', m.totalesColumna, m.totalGeneral, true);
   return compartirBlob(await aBlob(c), 'resumen-loteria.png', m.titulo);
 }

@@ -109,3 +109,19 @@ export function partePersonaEnGrupo(d: Decimo, personaId: string, grupo: Grupo):
   if (!r) return 0;
   return repartoEquitativo(r.importeCent, grupo.personaIds.map((p) => 'p:' + p)).find((x) => x.destino === 'p:' + personaId)?.importeCent ?? 0;
 }
+
+/**
+ * Lo que juego yo en un décimo: mi parte directa y por grupos, más lo que aún no está
+ * asignado a nadie. Sin ninguna persona marcada como «yo», cuenta el décimo entero.
+ */
+export function miParteCent(d: Decimo, yoIds: string[], grupos: Grupo[]): number {
+  if (yoIds.length === 0) return d.importeCent;
+  const sinAsignar = Math.max(0, d.importeCent - d.reparto.reduce((a, r) => a + r.importeCent, 0));
+  return sinAsignar + yoIds.reduce((a, id) => a + partePersona(d, id, grupos), 0);
+}
+
+/** Premio que me corresponde: el premio total en proporción a mi parte del décimo. */
+export function miPremioCent(d: Decimo, yoIds: string[], grupos: Grupo[]): number {
+  if (d.premioCent <= 0 || d.importeCent <= 0) return 0;
+  return Math.round((d.premioCent * miParteCent(d, yoIds, grupos)) / d.importeCent);
+}

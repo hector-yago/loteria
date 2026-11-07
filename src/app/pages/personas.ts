@@ -17,11 +17,13 @@ import { Ui } from '../core/ui';
       @if (tab() === 'personas') {
         @for (p of store.personas(); track p.id) {
           <div class="item"><span class="av" [style.background]="p.color">{{ p.nombre[0] }}</span>
-            <div class="meta"><b>{{ p.nombre }}</b><span>{{ gruposDe(p.id) }}</span></div>
-            <button class="btn ghost sm" type="button" (click)="editarPersona(p.id, p.nombre)">Editar</button></div>
+            <div class="meta"><b>{{ p.nombre }}@if (p.soyYo) { <span class="pill s-comprado" style="margin-left:6px">Yo</span> }</b><span>{{ gruposDe(p.id) }}</span></div>
+            <button class="btn ghost sm" type="button" (click)="editarPersona(p.id, p.nombre, p.soyYo ?? false)">Editar</button></div>
         } @empty { <p class="note">Aún no hay personas. Añade a quienes juegas contigo.</p> }
         @if (edit() === 'p') {
           <div class="card"><div class="field"><label for="n">Nombre</label><input class="input" id="n" [value]="nombre()" (input)="nombre.set($any($event.target).value)" maxlength="40"></div>
+            <div class="who" role="button" tabindex="0" (click)="soyYo.set(!soyYo())" (keydown.enter)="soyYo.set(!soyYo())" (keydown.space)="soyYo.set(!soyYo()); $event.preventDefault()">
+              <div class="grow"><b>Esta persona soy yo</b><span>El informe cuenta solo lo que juegan las personas marcadas como «yo».</span></div><span class="tick" [class.on]="soyYo()"><app-icon name="check" /></span></div>
             @if (error()) { <div class="err" role="alert" style="margin-top:8px">{{ error() }}</div> }
             <div class="row" style="margin-top:10px">
               @if (editId()) { <button class="btn ghost sm" type="button" (click)="borrar()">Eliminar</button> }
@@ -56,15 +58,16 @@ export class PersonasPage {
   protected readonly edit = signal<'p' | 'g' | null>(null);
   protected readonly editId = signal<string | undefined>(undefined);
   protected readonly nombre = signal('');
+  protected readonly soyYo = signal(false);
   protected readonly sel = signal<string[]>([]);
   protected readonly error = signal('');
   protected readonly miembros = (ids: string[]) => this.store.personas().filter((p) => ids.includes(p.id));
   protected readonly gruposDe = (id: string) => this.store.grupos().filter((g) => g.personaIds.includes(id)).map((g) => g.nombre).join(' · ');
   protected readonly vacio = computed(() => !this.nombre().trim());
 
-  protected cerrar(t: 'personas' | 'grupos') { this.tab.set(t); this.edit.set(null); this.editId.set(undefined); this.nombre.set(''); this.sel.set([]); this.error.set(''); }
+  protected cerrar(t: 'personas' | 'grupos') { this.tab.set(t); this.edit.set(null); this.editId.set(undefined); this.nombre.set(''); this.soyYo.set(false); this.sel.set([]); this.error.set(''); }
   protected nueva(k: 'p' | 'g') { this.cerrar(this.tab()); this.edit.set(k); }
-  protected editarPersona(id: string, n: string) { this.edit.set('p'); this.editId.set(id); this.nombre.set(n); this.error.set(''); }
+  protected editarPersona(id: string, n: string, yo: boolean) { this.edit.set('p'); this.editId.set(id); this.nombre.set(n); this.soyYo.set(yo); this.error.set(''); }
   protected editarGrupo(id: string) {
     const g = this.store.grupos().find((x) => x.id === id)!;
     this.edit.set('g'); this.editId.set(id); this.nombre.set(g.nombre); this.sel.set([...g.personaIds]); this.error.set('');
@@ -73,7 +76,7 @@ export class PersonasPage {
 
   protected async guardarPersona() {
     if (this.vacio()) { this.error.set('Escribe un nombre.'); return; }
-    await this.store.guardarPersona(this.nombre(), this.editId());
+    await this.store.guardarPersona(this.nombre(), this.soyYo(), this.editId());
     this.cerrar('personas');
   }
   protected async guardarGrupo() {

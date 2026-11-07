@@ -15,6 +15,7 @@
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:var(--surface2);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.4}
+button,a,input,select,[role="button"]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
 button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 a{color:inherit;text-decoration:none}
@@ -38,7 +39,7 @@ a{color:inherit;text-decoration:none}
 .sect h3{font-family:var(--f-display);font-size:17px;margin:0}
 .sect span,.note{color:var(--muted);font-size:13px}
 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
-.chip{flex:none;height:34px;padding:0 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px;font-weight:500;color:var(--muted)}
+.chip{flex:none;height:40px;padding:0 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px;font-weight:500;color:var(--muted)}
 .chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;white-space:nowrap}
 .s-pendiente{background:var(--warn-bg);color:var(--warn)}.s-comprado{background:var(--info-bg);color:var(--info)}
@@ -48,7 +49,7 @@ a{color:inherit;text-decoration:none}
 .meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
 .meta b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta span{color:var(--muted);font-size:13px}
 .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-.star{width:30px;height:30px;display:grid;place-items:center;color:var(--muted)}.star.on{color:var(--gold)}.star svg{width:20px;height:20px}
+.star{width:44px;height:44px;display:grid;place-items:center;color:var(--muted)}.star.on{color:var(--gold)}.star svg{width:20px;height:20px}
 .ticket{border-radius:16px;background:linear-gradient(135deg,#F9EFD3,#F2DFAE);color:#3A2A08;padding:16px;border:1px solid #D9BD7A}
 .ticket .t1,.ticket .t3{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#7A5A12}
 .ticket .tn{font-family:var(--f-mono);font-size:44px;letter-spacing:.1em;text-align:center;margin:12px 0 6px;color:#8E1A22}
@@ -62,7 +63,10 @@ a{color:inherit;text-decoration:none}
 .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px;color:#fff;flex:none}
 .grow{flex:1;min-width:0}.grow b{display:block}.grow span{color:var(--muted);font-size:13px}
 .amt{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px;text-align:right;min-width:70px}
-.step{display:flex;align-items:center;gap:6px}.step button{width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:var(--surface2);font-weight:700}
+.step{display:flex;align-items:center;gap:6px}.step button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);font-weight:700;font-size:20px}
+.amt-input{width:92px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-family:var(--f-mono);font-size:15px;text-align:center;padding:0 4px}
+.who[role="button"]{min-height:52px;cursor:pointer}
+.nav a svg{width:22px;height:22px}
 .tick{width:24px;height:24px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;flex:none;color:transparent}
 .tick.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.tick svg{width:15px;height:15px}
 table{width:100%;border-collapse:collapse;font-size:14px}

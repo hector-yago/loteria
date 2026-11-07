@@ -94,11 +94,9 @@ export class ResumenPage {
     const m = this.matriz(g, false);
     if (!m.columnas.length) { this.ui.aviso('Este grupo aún no tiene décimos comprados que compartir.'); return; }
     await this.enviar({
-      titulo: `${g.nombre} · Lotería de Navidad ${this.store.year()}`,
+      titulo: `Lotería de Navidad ${this.store.year()}`,
       columnas: m.columnas.map((d) => d.numero),
       filas: m.filas.map((f) => ({ nombre: f.nombre, celdas: f.celdas.map((v) => (v ? formatoEuros(v) : '')), total: formatoEuros(f.total) })),
-      totalesColumna: m.totales.map((v) => formatoEuros(v)),
-      totalGeneral: formatoEuros(m.totalGeneral),
     });
   }
 
@@ -109,10 +107,8 @@ export class ResumenPage {
       const v = cols.map((d) => partePersona(d, p.id, this.store.grupos()));
       return { nombre: p.nombre, celdas: v.map((x) => (x ? formatoEuros(x) : '')), total: formatoEuros(v.reduce((a, x) => a + x, 0)) };
     });
-    const sumaCol = cols.map((d) => this.store.personas().reduce((a, p) => a + partePersona(d, p.id, this.store.grupos()), 0));
     await this.enviar({
       titulo: `Lotería de Navidad ${this.store.year()}`, columnas: cols.map((d) => d.numero), filas,
-      totalesColumna: sumaCol.map((v) => formatoEuros(v)), totalGeneral: formatoEuros(this.totalPersonas()),
     });
   }
 

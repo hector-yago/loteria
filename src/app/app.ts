@@ -22,7 +22,6 @@ import { Ui } from './core/ui';
     .nav{display:flex;border-top:1px solid var(--line);background:var(--surface);padding:6px 4px calc(8px + env(safe-area-inset-bottom))}
     .nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:500;color:var(--muted);padding:4px 0}
     .nav a.on{color:var(--accent)}
-    .nav a :is(svg){width:22px;height:22px}
   `,
 })
 export class App {
