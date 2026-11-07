@@ -112,7 +112,7 @@ export async function compartirDecimo(t: TarjetaDecimo): Promise<boolean> {
 export interface TablaMatriz {
   titulo: string;
   columnas: string[]; // números de décimo
-  /** «Comprado en» de cada columna (mismo orden); si ninguno tiene valor, no se dibuja la fila. */
+  /** Lugar o detalles de cada columna (mismo orden); si ninguno tiene valor, no se dibuja la fila. */
   lugares?: string[];
   filas: { nombre: string; celdas: string[]; total: string }[]; // total = lo que paga cada persona
 }
@@ -140,7 +140,7 @@ export async function compartirMatriz(m: TablaMatriz): Promise<boolean> {
   await document.fonts.load(`500 18px ${FUENTE}`);
   const colW = 150, nomW = 230, totW = 150, fh = 56, anchoLugar = colW - 16, altoLinea = 22;
 
-  // «Comprado en»: fila extra bajo los números, solo si algún décimo tiene lugar.
+  // Lugar o detalles: fila extra bajo los números, solo si algún décimo tiene lugar.
   const lugares = m.lugares ?? [];
   const hayLugares = lugares.some((l) => l.trim() !== '');
   const medida = lienzo(1, 1).g;
@@ -161,7 +161,6 @@ export async function compartirMatriz(m: TablaMatriz): Promise<boolean> {
 
   if (hayLugares) {
     g.font = `500 18px ${FUENTE}`; g.globalAlpha = 0.75;
-    g.textAlign = 'left'; g.fillText('Comprado en', 20, 156);
     g.textAlign = 'right';
     lineasLugar.forEach((ls, i) => ls.forEach((l, j) => g.fillText(l, x(i) - 12, 156 + j * altoLinea)));
   }

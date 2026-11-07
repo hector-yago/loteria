@@ -1,4 +1,4 @@
-# Mis Décimos (PWA lotería de Navidad)
+# Lotería Navidad (PWA, antes «Mis Décimos»)
 Proyecto nuevo, personal. Angular 22 (standalone, signals, OnPush) + Dexie (IndexedDB) + Service Worker (`@angular/pwa`).
 - Datos solo en el móvil (IndexedDB); nada se sube. La app no hace llamadas de red de datos (sin cámara ni OCR: se retiró porque no funcionaba en el móvil).
 - Importes SIEMPRE en céntimos enteros (`importeCent`); formato con `formatoEuros`.

@@ -1,6 +1,6 @@
 {
-  "name": "Mis Décimos",
-  "short_name": "Décimos",
+  "name": "Lotería Navidad",
+  "short_name": "Lotería Navidad",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",

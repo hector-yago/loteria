@@ -42,7 +42,7 @@ const aTexto = (cent: number) => String(cent / 100).replace('.', ',');
       <div class="field"><label for="num">Número (5 cifras)</label>
         <input class="input" id="num" inputmode="numeric" maxlength="5" [value]="numero()" (input)="numero.set(limpiar($any($event.target).value))">
         @if (numero() && numero().length !== 5) { <span class="note">Faltan cifras.</span> }</div>
-      <div class="field"><label for="lugar">Comprado en</label>
+      <div class="field"><label for="lugar">Detalles</label>
         <input class="input" id="lugar" [value]="lugar()" (input)="lugar.set($any($event.target).value)" placeholder="Bar, administración, trabajo…"></div>
       <div class="field"><label for="cant">Cantidad que juego</label>
         <div class="seg"><button type="button" [class.on]="unidad() === 'eur'" (click)="cambiarUnidad('eur')">Euros</button><button type="button" [class.on]="unidad() === 'dec'" (click)="cambiarUnidad('dec')">Décimos</button></div>
