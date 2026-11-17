@@ -45,9 +45,19 @@ export interface Grupo {
   personaIds: string[];
 }
 
+export type Categoria = 'primero' | 'segundo' | 'tercero' | 'cuarto' | 'quinto';
+
+/** Número agraciado con uno de los primeros premios (sin pedrea). */
+export interface PremioSorteo {
+  id: string;
+  categoria: Categoria;
+  numero: string; // 5 cifras
+}
+
 export interface Sorteo {
   year: number;
   fecha: string; // ISO yyyy-mm-dd
+  premios?: PremioSorteo[];
 }
 
 export const PRECIO_DECIMO_CENT = 2000;

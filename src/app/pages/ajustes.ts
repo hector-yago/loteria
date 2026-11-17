@@ -15,7 +15,10 @@ import { Ui } from '../core/ui';
         <div class="seg"><button type="button" [class.on]="store.tema() === 'sistema'" (click)="store.setTema('sistema')">Sistema</button><button type="button" [class.on]="store.tema() === 'claro'" (click)="store.setTema('claro')">Claro</button><button type="button" [class.on]="store.tema() === 'oscuro'" (click)="store.setTema('oscuro')">Oscuro</button></div></div>
 
       <div class="card"><div class="lbl" style="margin-bottom:6px">Sorteos</div>
-        @for (s of store.sorteos(); track s.year) { <div class="who"><div class="grow"><b>{{ s.year }}</b><span>{{ s.fecha }}</span></div>@if (s.year === store.year()) { <span class="pill s-comprado">En uso</span> } @else { <button class="btn ghost sm" type="button" (click)="store.setYear(s.year)">Usar</button> }</div> }
+        @for (s of store.sorteos(); track s.year) { <div class="who"><div class="grow"><b>{{ s.year }}</b><span>{{ s.fecha }}</span></div>@if (s.year === store.year()) { <span class="pill s-comprado">En uso</span> } @else { <button class="btn ghost sm" type="button" (click)="store.setYear(s.year)">Usar</button> }
+          @if (store.sorteos().length > 1) { <button class="icon-btn" type="button" (click)="borrando.set(s.year)" [attr.aria-label]="'Eliminar sorteo ' + s.year"><app-icon name="trash" /></button> }</div> }
+        @if (borrando(); as y) { <div class="hint" style="margin-top:10px">Se eliminará el sorteo {{ y }} con sus {{ numDecimos(y) }} décimos y sus premios. No se puede deshacer.
+          <div class="row" style="margin-top:8px"><button class="btn ghost sm" type="button" style="flex:1" (click)="borrando.set(null)">Cancelar</button><button class="btn sm" type="button" style="flex:1" (click)="borrar(y)">Eliminar</button></div></div> }
         <button class="btn ghost sm" type="button" style="margin-top:8px" (click)="nuevoAnio()"><app-icon name="plus" />Añadir año {{ siguiente() }}</button></div>
 
       <div class="card"><div class="lbl" style="margin-bottom:8px">Copia de seguridad</div>
@@ -27,7 +30,7 @@ import { Ui } from '../core/ui';
         @if (error()) { <div class="err" role="alert" style="margin-top:10px">{{ error() }}</div> }</div>
 
       <div class="card"><div class="lbl" style="margin-bottom:6px">Privacidad</div>
-        <p class="note" style="margin:0">Nada se guarda en Internet. Solo «Comprobar décimos» consulta resultados y envía únicamente el número.</p></div>
+        <p class="note" style="margin:0">Nada se guarda en Internet: todos los datos viven solo en este móvil.</p></div>
     </div>
   `,
 })
@@ -37,6 +40,10 @@ export class AjustesPage {
   protected readonly pendiente = signal<string | null>(null);
   protected readonly error = signal('');
   protected siguiente() { return Math.max(...this.store.sorteos().map((s) => s.year), new Date().getFullYear()) + 1; }
+
+  protected readonly borrando = signal<number | null>(null);
+  protected numDecimos(y: number) { return this.store.decimos().filter((d) => d.year === y).length; }
+  protected async borrar(y: number) { this.borrando.set(null); await this.store.eliminarSorteo(y); this.ui.aviso(`Sorteo ${y} eliminado`); }
 
   protected async nuevoAnio() { const y = this.siguiente(); await this.store.crearSorteo(y); this.store.setYear(y); this.ui.aviso(`Sorteo ${y} creado`); }
 

@@ -29,6 +29,7 @@ export class App {
   protected readonly items = [
     { ruta: '/inicio', texto: 'Inicio', icono: 'home' },
     { ruta: '/decimos', texto: 'Décimos', icono: 'ticket' },
+    { ruta: '/navidad', texto: 'Navidad', icono: 'star' },
     { ruta: '/personas', texto: 'Personas', icono: 'users' },
     { ruta: '/informe', texto: 'Informe', icono: 'chart' },
     { ruta: '/ajustes', texto: 'Ajustes', icono: 'gear' },

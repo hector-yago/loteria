@@ -1,7 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { crearBackup, leerBackup } from './backup';
 import { db } from './db';
-import { Decimo, Estado, Grupo, Persona, Sorteo } from './models';
+import { Decimo, Estado, Grupo, Persona, PremioSorteo, Sorteo } from './models';
 import { favoritosParaAnio, miParteCent, miPremioCent } from './reparto';
 
 const nuevoId = () => crypto.randomUUID();
@@ -65,6 +65,30 @@ export class Store {
       await this.guardarDecimo({ ...f, id: undefined, year, estado: 'pendiente', premioCent: 0, premioTexto: undefined });
     }
   }
+
+  /** Elimina el sorteo y todos sus décimos. Si era el año en uso, pasa al más reciente que quede. */
+  async eliminarSorteo(year: number) {
+    if (this.sorteos().length <= 1) return;
+    const ids = this.decimos().filter((d) => d.year === year).map((d) => d.id);
+    await db.transaction('rw', db.decimos, db.sorteos, async () => { await db.decimos.bulkDelete(ids); await db.sorteos.delete(year); });
+    this.decimos.update((l) => l.filter((d) => d.year !== year));
+    this.sorteos.update((l) => l.filter((s) => s.year !== year));
+    if (this.year() === year) this.setYear(Math.max(...this.sorteos().map((s) => s.year)));
+  }
+
+  // ---- primeros premios del sorteo ----
+  readonly premiosAnio = computed(() => this.sorteos().find((s) => s.year === this.year())?.premios ?? []);
+  private async guardarPremios(premios: PremioSorteo[]) {
+    const s = this.sorteos().find((x) => x.year === this.year()) ?? { year: this.year(), fecha: `${this.year()}-12-22` };
+    const nuevo: Sorteo = { ...s, premios };
+    await db.sorteos.put(nuevo);
+    this.sorteos.update((l) => [...l.filter((x) => x.year !== nuevo.year), nuevo].sort((a, b) => b.year - a.year));
+  }
+  async guardarPremio(p: Omit<PremioSorteo, 'id'> & { id?: string }) {
+    const completo: PremioSorteo = { ...p, id: p.id ?? nuevoId() };
+    await this.guardarPremios([...this.premiosAnio().filter((x) => x.id !== completo.id), completo]);
+  }
+  async eliminarPremio(id: string) { await this.guardarPremios(this.premiosAnio().filter((x) => x.id !== id)); }
 
   // ---- décimos ----
   async guardarDecimo(d: Omit<Decimo, 'id'> & { id?: string }): Promise<Decimo> {

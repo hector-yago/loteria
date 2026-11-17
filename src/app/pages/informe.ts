@@ -25,6 +25,14 @@ import { Store } from '../core/store';
           } @empty { <tr><td colspan="4" class="note">Sin datos todavía.</td></tr> }</tbody>
         </table>
       </div>
+      <div class="card" style="overflow-x:auto"><div class="sect"><h3>Jugado por terminación</h3></div>
+        <table>
+          <thead><tr><th>Terminación</th><th class="r">Décimos</th><th class="r">Jugado</th></tr></thead>
+          <tbody>@for (t of terminaciones(); track t.digito) {
+            <tr><td><b>{{ t.digito }}</b></td><td class="r">{{ t.decimos }}</td><td class="r">{{ eur(t.cent) }}</td></tr>
+          }</tbody>
+        </table>
+        <p class="note">Suma todos los años; solo décimos comprados y tu parte.</p></div>
       @if (anios().length) {
         <div class="card"><div class="sect"><h3>Jugado y premio por año</h3></div>
           <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" width="100%" role="img" aria-label="Barras de euros jugados y premios por año">
@@ -58,6 +66,17 @@ export class InformePage {
   protected readonly jugado = computed(() => this.anios().reduce((a, x) => a + x.jugado, 0));
   protected readonly premio = computed(() => this.anios().reduce((a, x) => a + x.premio, 0));
   protected readonly balance = computed(() => this.premio() - this.jugado());
+
+  protected readonly terminaciones = computed(() => {
+    const t = Array.from({ length: 10 }, (_, digito) => ({ digito, decimos: 0, cent: 0 }));
+    for (const d of this.store.decimos()) {
+      if (d.estado === 'pendiente') continue;
+      const cent = this.store.miParte(d);
+      const f = t[Number(d.numero.slice(-1))];
+      if (cent > 0) { f.decimos++; f.cent += cent; }
+    }
+    return t;
+  });
 
   private readonly maxEur = computed(() => {
     const m = Math.max(1, ...this.anios().flatMap((a) => [a.jugado, a.premio])) / 100;
