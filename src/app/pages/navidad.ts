@@ -38,7 +38,7 @@ import { Store } from '../core/store';
 
       <div class="sect"><h3>Mis décimos</h3></div>
       @if (!store.premiosAnio().length) { <div class="hint">Introduce los números premiados para ver cuáles te han tocado. No se incluye la pedrea.</div> }
-      @if (total() > 0) { <div class="card stat"><b style="color:var(--ok)">{{ eur(total()) }}</b><span>premios sin pedrea</span></div> }
+      @if (total() > 0) { <div class="card stat"><b style="color:var(--ok)">{{ eur(total()) }}</b><span>mis premios sin pedrea</span></div> }
       @for (l of lineas(); track l.id) {
         <a class="who" [routerLink]="['/decimos', l.id]" [style.border-color]="l.cent ? 'var(--ok)' : ''" [style.background]="l.cent ? 'color-mix(in srgb, var(--ok) 14%, transparent)' : ''">
           <div class="num" style="font-size:16px;padding:4px 8px" [style.color]="l.cent ? 'var(--ok)' : ''">{{ num(l.numero) }}</div>
@@ -65,11 +65,11 @@ export class NavidadPage {
   protected readonly error = signal('');
 
   protected readonly lineas = computed(() =>
-    [...this.store.decimosAnio()].sort((a, b) => a.numero.localeCompare(b.numero)).map((d) => {
+    [...this.store.decimosAnio()].sort((a, b) => a.numero.localeCompare(b.numero)).map((d) => ({ d, mio: this.store.miParte(d) })).filter((x) => x.mio > 0).map(({ d, mio }) => {
       const c = comprobarDecimo(d.numero, this.store.premiosAnio());
-      const k = (x: number) => escalarPremio(x, d.importeCent);
+      const k = (x: number) => escalarPremio(x, mio);
       return {
-        id: d.id, numero: d.numero, lugar: d.lugar, pendiente: d.estado === 'pendiente', importe: d.importeCent,
+        id: d.id, numero: d.numero, lugar: d.lugar, pendiente: d.estado === 'pendiente', importe: mio,
         cent: k(c.cent), motivos: c.motivos.map((m) => ({ texto: m.texto, cent: k(m.cent) })),
       };
     }));
