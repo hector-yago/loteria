@@ -11,3 +11,4 @@ Proyecto nuevo, personal. Angular 22 (standalone, signals, OnPush) + Dexie (Inde
 - Persona con `soyYo`: totales de Inicio e Informe cuentan solo mi parte (`miParteCent`/`miPremioCent`); lo sin asignar cuenta como mío; sin ninguna marcada se cuenta el décimo entero.
 - Táctil: botones ≥ 44 px y `touch-action: manipulation` (global); los campos de importe guardan el texto escrito (no recalcular el `value` al teclear).
 - Pestaña «Navidad»: primeros premios del sorteo en `Sorteo.premios`; reglas e importes por décimo de 20 € en `core/premios.ts` (sin pedrea), escalados al importe jugado. Se puede eliminar un sorteo (y sus décimos) desde Ajustes salvo el último.
+- Reparto a grupo con `excluidos` (ids de miembros que no juegan ese décimo): usar siempre `miembrosActivos` en los cálculos. Compartir en Resumen es por persona.

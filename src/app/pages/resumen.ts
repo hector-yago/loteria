@@ -16,7 +16,6 @@ interface LineaDecimo { id: string; numero: string; lugar: string; estado: Decim
   imports: [CabeceraComponent, IconComponent, RouterLink],
   template: `
     <app-cabecera titulo="Resumen" [atras]="true">
-      @if (tab() === 'personas') { <button class="icon-btn" type="button" (click)="compartirPersonas()" aria-label="Compartir tabla de personas"><app-icon name="share" /></button> }
     </app-cabecera>
     <div class="pad">
       <div class="seg"><button type="button" [class.on]="tab() === 'personas'" (click)="tab.set('personas')">Por persona</button><button type="button" [class.on]="tab() === 'grupos'" (click)="tab.set('grupos')">Por grupo</button></div>
@@ -26,7 +25,8 @@ interface LineaDecimo { id: string; numero: string; lugar: string; estado: Decim
           <div class="card">
             <div class="row"><span class="av" [style.background]="p.color">{{ p.nombre[0] }}</span>
               <div class="grow"><b>{{ p.nombre }}</b><span>{{ p.compradas }} {{ p.compradas === 1 ? 'décimo' : 'décimos' }} comprados</span></div>
-              <span class="amt">{{ eur(p.total) }}</span></div>
+              <span class="amt">{{ eur(p.total) }}</span>
+              <button class="icon-btn" type="button" (click)="compartirPersona(p.id)" [attr.aria-label]="'Compartir lo que juega ' + p.nombre"><app-icon name="share" /></button></div>
             @for (l of p.lineas; track l.id) {
               <a class="who" [routerLink]="['/decimos', l.id]">
                 <div class="num" style="font-size:16px;padding:4px 8px">{{ num(l.numero) }}</div>
@@ -101,15 +101,20 @@ export class ResumenPage {
     });
   }
 
-  protected async compartirPersonas() {
-    const cols = this.ordenados().filter((d) => d.estado !== 'pendiente' && d.reparto.length);
-    if (!cols.length) { this.ui.aviso('Aún no hay décimos comprados y repartidos que compartir.'); return; }
-    const filas = this.store.personas().map((p) => {
-      const v = cols.map((d) => partePersona(d, p.id, this.store.grupos()));
-      return { nombre: p.nombre, celdas: v.map((x) => (x ? formatoEuros(x) : '')), total: formatoEuros(v.reduce((a, x) => a + x, 0)) };
-    });
+  /** Comparte solo lo que juega una persona: sus décimos comprados con su importe en cada uno. */
+  protected async compartirPersona(id: string) {
+    const p = this.store.personas().find((x) => x.id === id);
+    if (!p) return;
+    const lineas = this.ordenados()
+      .filter((d) => d.estado !== 'pendiente')
+      .map((d) => ({ d, cent: partePersona(d, id, this.store.grupos()) }))
+      .filter((x) => x.cent > 0);
+    if (!lineas.length) { this.ui.aviso(p.nombre + ' aún no tiene décimos comprados que compartir.'); return; }
+    const total = lineas.reduce((a, x) => a + x.cent, 0);
     await this.enviar({
-      titulo: `Lotería de Navidad ${this.store.year()}`, columnas: cols.map((d) => d.numero), lugares: cols.map((d) => d.lugar), filas,
+      titulo: `Lotería de Navidad ${this.store.year()}`,
+      columnas: lineas.map((x) => x.d.numero), lugares: lineas.map((x) => x.d.lugar),
+      filas: [{ nombre: p.nombre, celdas: lineas.map((x) => formatoEuros(x.cent)), total: formatoEuros(total) }],
     });
   }
 

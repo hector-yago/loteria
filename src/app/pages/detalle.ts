@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CabeceraComponent } from '../core/cabecera';
 import { compartirDecimo } from '../core/compartir';
 import { IconComponent } from '../core/icon';
 import { Decimo, ESTADOS, Estado, PRECIO_DECIMO_CENT, Reparto } from '../core/models';
-import { formatoEuros, formatoNumero, partePersona, pendienteDeAsignar, repartoEquitativo } from '../core/reparto';
+import { formatoEuros, formatoNumero, miembrosActivos, partePersona, pendienteDeAsignar, repartoEquitativo } from '../core/reparto';
 import { Store } from '../core/store';
 import { Ui } from '../core/ui';
 
@@ -18,7 +19,7 @@ const aTexto = (cent: number) => String(cent / 100).replace('.', ',');
 @Component({
   selector: 'app-detalle',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CabeceraComponent, IconComponent],
+  imports: [CabeceraComponent, IconComponent, NgTemplateOutlet],
   template: `
     <app-cabecera [titulo]="esNuevo() ? 'Nuevo décimo' : 'Décimo'" [atras]="true" [anio]="false">
       @if (!esNuevo()) {
@@ -64,6 +65,7 @@ const aTexto = (cent: number) => String(cent / 100).replace('.', ',');
             <div class="who" role="button" tabindex="0" (click)="alternar(r.id)" (keydown.enter)="alternar(r.id)" (keydown.space)="alternar(r.id); $event.preventDefault()">
               <span class="av" [style.background]="r.color">{{ r.nombre[0] }}</span><div class="grow"><b>{{ r.nombre }}</b>@if (r.grupo) { <span>Grupo</span> }</div>
               <span class="amt">{{ importeEq(r.id) !== null ? eur(importeEq(r.id)!) : '—' }}</span><span class="tick" [class.on]="elegidos().includes(r.id)"><app-icon name="check" /></span></div>
+            @if (r.grupo && elegidos().includes(r.id)) { <ng-container *ngTemplateOutlet="miembros; context: { $implicit: r.id }" /> }
           } @else {
             <div class="who"><span class="av" [style.background]="r.color">{{ r.nombre[0] }}</span><div class="grow"><b>{{ r.nombre }}</b></div>
               <div class="step">
@@ -72,6 +74,7 @@ const aTexto = (cent: number) => String(cent / 100).replace('.', ',');
                   [value]="editando() === r.id ? editTxt() : eur(manual()[r.id] ?? 0)"
                   (focus)="enfocar(r.id, $event)" (input)="escribirManual(r.id, $any($event.target).value)" (blur)="soltar()" (keydown.enter)="$any($event.target).blur()">
                 <button type="button" (click)="ajustar(r.id, 50)" [attr.aria-label]="'Más ' + r.nombre">+</button></div></div>
+            @if (r.grupo && (manual()[r.id] ?? 0) > 0) { <ng-container *ngTemplateOutlet="miembros; context: { $implicit: r.id }" /> }
           }
         } @empty { <p class="note">Crea personas o grupos en la pestaña Personas para repartir.</p> }
         @if (destinos().length) {
@@ -79,6 +82,11 @@ const aTexto = (cent: number) => String(cent / 100).replace('.', ',');
           @else { <div class="hint">{{ pendiente() > 0 ? 'Faltan por asignar ' + eur(pendiente()) : 'Te pasas en ' + eur(-pendiente()) }}.</div> }
         }
       </div>
+      <ng-template #miembros let-gid>
+        <div class="hint" style="margin:0 0 8px">Quién juega de este grupo (toca para excluir):
+          <div class="chips" style="margin-top:6px">@for (m of miembrosDe(gid); track m.id) {
+            <button type="button" class="chip" [class.on]="!excluido(gid, m.id)" (click)="alternarExcluido(gid, m.id)" [attr.aria-pressed]="!excluido(gid, m.id)">{{ m.nombre }}</button> }</div></div>
+      </ng-template>
       @if (error()) { <div class="err" role="alert">{{ error() }}</div> }
       <button class="btn" type="button" (click)="guardar()">Guardar</button>
     </div>
@@ -110,6 +118,8 @@ export class DetallePage {
   protected readonly modo = signal<'equi' | 'man'>('equi');
   protected readonly elegidos = signal<string[]>([]);
   protected readonly manual = signal<Record<string, number>>({});
+  /** Por destino de grupo («g:id»): ids de las personas excluidas de este décimo. */
+  protected readonly excluidos = signal<Record<string, string[]>>({});
   protected readonly editando = signal<string | null>(null);
   protected readonly editTxt = signal('');
   protected readonly error = signal('');
@@ -120,10 +130,12 @@ export class DetallePage {
     ...this.store.personas().map((p) => ({ id: 'p:' + p.id, nombre: p.nombre, color: p.color, grupo: false })),
     ...this.store.grupos().map((g) => ({ id: 'g:' + g.id, nombre: g.nombre, color: '#4A5550', grupo: true })),
   ]);
-  protected readonly repartoActual = computed<Reparto[]>(() =>
-    this.modo() === 'equi'
+  protected readonly repartoActual = computed<Reparto[]>(() => {
+    const base = this.modo() === 'equi'
       ? repartoEquitativo(this.importe(), this.elegidos())
-      : Object.entries(this.manual()).filter(([, c]) => c > 0).map(([destino, importeCent]) => ({ destino, importeCent })));
+      : Object.entries(this.manual()).filter(([, c]) => c > 0).map(([destino, importeCent]) => ({ destino, importeCent }));
+    return base.map((r) => { const ex = this.excluidos()[r.destino]; return r.destino.startsWith('g:') && ex?.length ? { ...r, excluidos: ex } : r; });
+  });
   protected readonly pendiente = computed(() => pendienteDeAsignar({ importeCent: this.importe() }, this.repartoActual()));
 
   constructor() {
@@ -141,6 +153,7 @@ export class DetallePage {
       this.modo.set(eq || !d.reparto.length ? 'equi' : 'man');
       this.elegidos.set(d.reparto.map((r) => r.destino));
       this.manual.set(Object.fromEntries(d.reparto.map((r) => [r.destino, r.importeCent])));
+      this.excluidos.set(Object.fromEntries(d.reparto.filter((r) => r.excluidos?.length).map((r) => [r.destino, r.excluidos!])));
     });
   }
 
@@ -158,6 +171,11 @@ export class DetallePage {
   protected escribirPremio(texto: string) { this.premioTxt.set(texto); this.premio.set(aCentimos(texto) ?? 0); }
 
   protected alternar(id: string) { this.elegidos.update((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id])); }
+  protected miembrosDe(gid: string) { const g = this.store.grupos().find((x) => 'g:' + x.id === gid); return this.store.personas().filter((p) => g?.personaIds.includes(p.id)); }
+  protected excluido(gid: string, pid: string) { return (this.excluidos()[gid] ?? []).includes(pid); }
+  protected alternarExcluido(gid: string, pid: string) {
+    this.excluidos.update((m) => { const l = m[gid] ?? []; return { ...m, [gid]: l.includes(pid) ? l.filter((x) => x !== pid) : [...l, pid] }; });
+  }
   protected importeEq(id: string): number | null { return this.repartoActual().find((r) => r.destino === id)?.importeCent ?? null; }
 
   protected ajustar(id: string, delta: number) {
@@ -181,6 +199,8 @@ export class DetallePage {
     if (!/^\d{5}$/.test(this.numero())) { this.error.set('El número debe tener 5 cifras.'); return; }
     if (this.importe() <= 0) { this.error.set('La cantidad debe ser mayor que 0.'); return; }
     if (this.pendiente() < 0) { this.error.set('El reparto supera lo que juegas. Ajusta los importes.'); return; }
+    const sinNadie = this.repartoActual().find((r) => { const g = this.store.grupos().find((x) => 'g:' + x.id === r.destino); return g && !miembrosActivos(g, r).length; });
+    if (sinNadie) { this.error.set('Has excluido a todos los miembros de ' + this.store.nombreDestino(sinNadie.destino) + '.'); return; }
     this.error.set('');
     await this.store.guardarDecimo({
       ...(this.original ?? { premioCent: 0, reparto: [] }),

@@ -74,3 +74,19 @@ describe('lo que juego yo', () => {
     expect(miParteCent(dec({ reparto: [{ destino: 'p:b', importeCent: 2000 }] }), ['a'], grupos)).toBe(0));
   it('premio proporcional a mi parte', () => expect(miPremioCent(d, ['a'], grupos)).toBe(5000));
 });
+
+describe('exclusión de miembros de un grupo', () => {
+  const g = { id: 'g1', nombre: 'Trabajo', personaIds: ['a', 'b', 'c', 'd', 'e'] };
+  const d = { id: 'x', year: 2026, numero: '12345', lugar: '', importeCent: 2000, estado: 'comprado', favorito: false, premioCent: 0,
+    reparto: [{ destino: 'g:g1', importeCent: 2000, excluidos: ['e'] }] } as Decimo;
+  it('reparte solo entre los no excluidos', () => {
+    expect(partePersona(d, 'a', [g])).toBe(500);
+    expect(partePersona(d, 'e', [g])).toBe(0);
+    expect(partePersonaEnGrupo(d, 'e', g)).toBe(0);
+  });
+  it('resumen por persona respeta la exclusión', () => {
+    const t = resumenPorPersona([d], [], [g]);
+    expect(t.get('b')).toBe(500);
+    expect(t.get('e') ?? 0).toBe(0);
+  });
+});

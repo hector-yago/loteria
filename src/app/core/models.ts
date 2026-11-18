@@ -13,6 +13,8 @@ export type Destino = string;
 export interface Reparto {
   destino: Destino;
   importeCent: number;
+  /** Solo en destinos de grupo: personas del grupo que NO juegan este décimo. */
+  excluidos?: string[];
 }
 
 export interface Decimo {

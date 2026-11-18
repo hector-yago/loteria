@@ -17,6 +17,12 @@ export function pendienteDeAsignar(d: Pick<Decimo, 'importeCent'>, reparto: Repa
   return d.importeCent - reparto.reduce((a, r) => a + r.importeCent, 0);
 }
 
+/** Ids de las personas de un grupo que juegan este reparto (miembros menos excluidos). */
+export function miembrosActivos(g: Grupo, r: Pick<Reparto, 'excluidos'>): string[] {
+  const ex = r.excluidos ?? [];
+  return g.personaIds.filter((p) => !ex.includes(p));
+}
+
 const esGrupo = (d: Destino) => d.startsWith('g:');
 const idDe = (d: Destino) => d.slice(2);
 
@@ -36,7 +42,7 @@ export function resumenPorPersona(decimos: Decimo[], personas: Persona[], grupos
       } else {
         const g = grupos.find((x) => x.id === idDe(r.destino));
         if (!g) continue;
-        for (const parte of repartoEquitativo(r.importeCent, g.personaIds.map((p) => 'p:' + p))) {
+        for (const parte of repartoEquitativo(r.importeCent, miembrosActivos(g, r).map((p) => 'p:' + p))) {
           const id = idDe(parte.destino);
           totales.set(id, (totales.get(id) ?? 0) + parte.importeCent);
         }
@@ -96,7 +102,7 @@ export function partePersona(d: Decimo, personaId: string, grupos: Grupo[]): num
     if (r.destino === 'p:' + personaId) total += r.importeCent;
     else if (r.destino.startsWith('g:')) {
       const g = grupos.find((x) => 'g:' + x.id === r.destino);
-      const parte = g && repartoEquitativo(r.importeCent, g.personaIds.map((p) => 'p:' + p)).find((x) => x.destino === 'p:' + personaId);
+      const parte = g && repartoEquitativo(r.importeCent, miembrosActivos(g, r).map((p) => 'p:' + p)).find((x) => x.destino === 'p:' + personaId);
       if (parte) total += parte.importeCent;
     }
   }
@@ -107,7 +113,7 @@ export function partePersona(d: Decimo, personaId: string, grupos: Grupo[]): num
 export function partePersonaEnGrupo(d: Decimo, personaId: string, grupo: Grupo): number {
   const r = d.reparto.find((x) => x.destino === 'g:' + grupo.id);
   if (!r) return 0;
-  return repartoEquitativo(r.importeCent, grupo.personaIds.map((p) => 'p:' + p)).find((x) => x.destino === 'p:' + personaId)?.importeCent ?? 0;
+  return repartoEquitativo(r.importeCent, miembrosActivos(grupo, r).map((p) => 'p:' + p)).find((x) => x.destino === 'p:' + personaId)?.importeCent ?? 0;
 }
 
 /**
